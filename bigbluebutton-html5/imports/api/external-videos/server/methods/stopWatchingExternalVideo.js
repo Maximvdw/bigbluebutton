@@ -14,14 +14,17 @@ export default function stopWatchingExternalVideo(options) {
   }
 
   const { meetingId, requesterUserId } = options;
+  const user = Users.findOne({ requesterUserId, meetingId });
 
-  const meeting = Meetings.findOne({ meetingId });
-  if (!meeting || meeting.externalVideoUrl === null) return;
+  if (user && user.presenter) {
+    const meeting = Meetings.findOne({ meetingId });
+    if (!meeting || meeting.externalVideoUrl === null) return;
 
-  Meetings.update({ meetingId }, { $set: { externalVideoUrl: null } });
-  const payload = {};
+    Meetings.update({ meetingId }, { $set: { externalVideoUrl: null } });
+    const payload = {};
 
-  Logger.info(`User id=${requesterUserId} stopped sharing an external video for meeting=${meetingId}`);
+    Logger.info(`User id=${requesterUserId} stopped sharing an external video for meeting=${meetingId}`);
 
-  RedisPubSub.publishUserMessage(CHANNEL, EVENT_NAME, meetingId, requesterUserId, payload);
+    RedisPubSub.publishUserMessage(CHANNEL, EVENT_NAME, meetingId, requesterUserId, payload);
+  }
 }
